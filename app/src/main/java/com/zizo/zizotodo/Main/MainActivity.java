@@ -9,12 +9,19 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.PowerManager;
+import android.provider.Settings;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.zizo.zizotodo.About.AboutActivity;
 import com.zizo.zizotodo.R;
@@ -42,6 +49,35 @@ public class MainActivity extends AppCompatActivity {
         ActionBar actionBar = getSupportActionBar();
         if(actionBar != null){
             actionBar.setDisplayHomeAsUpEnabled(false);
+        }
+
+        //to remove battery restrictions
+        SharedPreferences preferences = getSharedPreferences(THEME_PREFERENCES, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        if(preferences.getBoolean("firstTime",true)) {
+            editor.putBoolean("firstTime",false);
+            editor.commit();
+
+            PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+            if (!pm.isIgnoringBatteryOptimizations(getPackageName())) {
+                new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Alert")
+                        .setMessage("if you want your alarms to ring at it's exact time , press Ok and remove restrictions.")
+                        .setPositiveButton("Ok", (dialog, which) -> {
+                            Intent i = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                            i.setData(Uri.parse("package:" + getPackageName()));
+                            startActivity(i);
+
+                            Toast.makeText(MainActivity.this, "please remove restrictions.", Toast.LENGTH_LONG).show();
+                        })
+                        .setNegativeButton("Cancel", (dialog, which) -> {
+                            Toast.makeText(MainActivity.this,
+                                    "if you want your alarms to ring at it's exact time , go to settings and remove restrictions.",
+                                    Toast.LENGTH_LONG).show();
+                        })
+                        .setIcon(android.R.drawable.ic_dialog_alert)
+                        .show();
+            }
         }
     }
 
